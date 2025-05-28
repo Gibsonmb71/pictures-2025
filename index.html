@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Discover Pictures 2024‑25</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 2rem; }
+    .hidden { display: none; }
+    label { display: block; margin-bottom: .5rem; }
+    input, select { width: 100%; padding: .5rem; margin-bottom: 1rem; }
+    button { padding: .75rem 1.5rem; font-size: 1rem; }
+    h1 { text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Discover Pictures 2024‑25</h1>
+
+  <!-- Sign-in form -->
+  <div id="signInDiv">
+    <form id="signInForm">
+      <label>Full Name<br><input type="text" name="name" required></label>
+      <label>Email Address<br><input type="email" name="email" required></label>
+      <label>Phone Number<br><input type="tel" name="phone" required></label>
+      <label><input type="checkbox" name="optin"> Send me other photos from this year</label>
+      <button type="submit">Continue →</button>
+    </form>
+  </div>
+
+  <!-- Category selection menu -->
+  <div id="menuDiv" class="hidden">
+    <p>Welcome, <span id="userName"></span>! Select a category:</p>
+    <select id="categorySelect">
+      <option value="">— choose category —</option>
+      <optgroup label="Baseball">
+        <option>Baseball: vs Pelion HS</option>
+        <option>Baseball: vs Strom Thurmond</option>
+      </optgroup>
+      <!-- Add more categories or subcategories here -->
+    </select>
+    <button id="goBtn" disabled>Go</button>
+    <p><small><a href="#" id="signOut">Not you? Sign out</a></small></p>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBV2X0Mj79Vp8dkvLPNzPHjm0TbbRLiw5fjGVCP8UqbeZuJZ8zvcGC1Nk4w_TTljckTQ/exec';
+
+    const FOLDER_MAP = {
+      "Baseball: vs Pelion HS": "https://adobe.ly/4mCuCpE",
+      "Baseball: vs Strom Thurmond": "https://adobe.ly/3QJvhak"
+    };
+
+    // Shortcuts
+    const qs = s => document.querySelector(s);
+    const store = user => localStorage.setItem('user', JSON.stringify(user));
+    const load = () => JSON.parse(localStorage.getItem('user') || 'null');
+    const clear = () => localStorage.removeItem('user');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = load();
+      if (user) showMenu(user);
+      else qs('#signInDiv').classList.remove('hidden');
+    });
+
+    qs('#signInForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = e.target;
+      const user = {
+        name: f.name.value.trim(),
+        email: f.email.value.trim(),
+        phone: f.phone.value.trim(),
+        optin: f.optin.checked
+      };
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams(user)
+      })
+      .then(r => r.json())
+      .then(r => {
+        if (r.status === 'OK') {
+          store(user);
+          showMenu(user);
+        } else {
+          alert('There was an error logging your info. Please try again.');
+        }
+      })
+      .catch(() => alert('Could not connect to the server. Please try again.'));
+    });
+
+    function showMenu(user) {
+      qs('#signInDiv').classList.add('hidden');
+      qs('#userName').textContent = user.name;
+      qs('#menuDiv').classList.remove('hidden');
+    }
+
+    qs('#categorySelect').addEventListener('change', e => {
+      qs('#goBtn').disabled = !e.target.value;
+    });
+
+    qs('#goBtn').addEventListener('click', () => {
+      const folder = FOLDER_MAP[qs('#categorySelect').value];
+      if (folder) window.location.href = folder;
+    });
+
+    qs('#signOut').addEventListener('click', e => {
+      e.preventDefault();
+      clear();
+      location.reload();
+    });
+  </script>
+</body>
+</html>
